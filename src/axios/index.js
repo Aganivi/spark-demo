@@ -5,7 +5,6 @@ import CryptoJS from 'crypto-js'
 const appId = 'd0e47256'
 let apiKey = 'MTE2ODg2YTc1Zjg3NzI3NGNiY2M0MWE5'
 let apiSecret = 'e71a93f37ccb8a4b9517f907c06f5523'
-let context = ''
 
 const httpUrl = new URL('https://spark-api.xf-yun.com/v3.5/chat')
 const modelDomain = 'generalv3.5'

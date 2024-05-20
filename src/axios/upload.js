@@ -2,8 +2,9 @@ import crypto from 'crypto'
 import fs from 'fs'
 import axios from 'axios'
 import FormData from 'form-data'
+import { APPId, APISecret } from './config.js'
 
-class DocumentUpload {
+export class DocumentUpload {
 	constructor(APPId, APISecret, timestamp) {
 		this.APPId = APPId
 		this.APISecret = APISecret
@@ -12,8 +13,7 @@ class DocumentUpload {
 
 	getOriginSignature() {
 		const data = this.APPId + this.Timestamp
-		console.log(`data:`, data)
-		const hash = crypto.createHash('md5').update(data).digest()
+		const hash = crypto.createHash('md5').update(data).digest('hex')
 		return hash
 	}
 
@@ -29,12 +29,11 @@ class DocumentUpload {
 	getHeader(formData) {
 		const signature = this.getSignature()
 		const headers = {
-			// ...formData.getHeaders(),
+			...formData.getHeaders(),
 			appId: this.APPId,
 			timestamp: this.Timestamp,
 			signature: signature,
 		}
-		console.log(`headers:`, headers)
 		return headers
 	}
 
@@ -56,17 +55,17 @@ class DocumentUpload {
 				formData,
 				{ headers }
 			)
-			console.log('Response:', response.data)
+			return response.data
 		} catch (error) {
-			// console.error('Error:', error)
+			console.error('Error:', error)
 		}
 	}
 }
 
-// 添加自己的APPId、APISecret
-const APPId = 'd0e47256'
-const APISecret = 'e71a93f37ccb8a4b9517f907c06f5523'
 const curTime = Math.floor(Date.now() / 1000).toString()
 
 const documentUpload = new DocumentUpload(APPId, APISecret, curTime)
-documentUpload.uploadDocument()
+
+const fileId = (await documentUpload.uploadDocument()).data.fileId
+
+console.log(`fileId:`, fileId)
