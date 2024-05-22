@@ -4,11 +4,12 @@ import axios from 'axios'
 import FormData from 'form-data'
 import { APPId, APISecret } from './config.js'
 
-export class DocumentUpload {
-	constructor(APPId, APISecret, timestamp) {
+export default class DocumentUpload {
+	constructor(APPId, APISecret, timestamp, uploadContent) {
 		this.APPId = APPId
 		this.APISecret = APISecret
 		this.Timestamp = timestamp
+		this.uploadContent = uploadContent
 	}
 
 	getOriginSignature() {
@@ -39,7 +40,7 @@ export class DocumentUpload {
 
 	async uploadDocument() {
 		const formData = new FormData()
-		formData.append('file', fs.createReadStream('src/axios/背影.txt'))
+		formData.append('file', this.uploadContent)
 		formData.append('url', '')
 		formData.append('fileName', '背影.txt')
 		formData.append('fileType', 'wiki')
