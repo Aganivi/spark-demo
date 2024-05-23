@@ -1,4 +1,5 @@
 import md5 from 'md5'
+import fs from 'fs'
 
 const mixinKeyEncTab = [
 	46, 47, 18, 2, 53, 8, 23, 32, 15, 50, 10, 31, 58, 3, 45, 35, 27, 43, 5, 49,
@@ -35,4 +36,9 @@ export function encWbi(WbiParams, img_key, sub_key) {
 	const wbi_sign = md5(query + mixin_key) // 计算 w_rid
 
 	return query + '&w_rid=' + wbi_sign
+}
+
+export const writeFile = (path, name, content) => {
+	if (!fs.existsSync(path)) fs.mkdirSync(path)
+	return fs.writeFileSync(path + name, content)
 }

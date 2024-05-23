@@ -2,14 +2,15 @@ import crypto from 'crypto'
 import fs from 'fs'
 import axios from 'axios'
 import FormData from 'form-data'
-import { APPId, APISecret } from './config.js'
+// import { APPId, APISecret } from './config.js'
 
 export default class DocumentUpload {
-	constructor(APPId, APISecret, timestamp, uploadContent) {
+	constructor(APPId, APISecret, timestamp, filePath) {
 		this.APPId = APPId
 		this.APISecret = APISecret
 		this.Timestamp = timestamp
-		this.uploadContent = uploadContent
+		this.filePath = filePath
+		this.instant = axios.create()
 	}
 
 	getOriginSignature() {
@@ -40,18 +41,17 @@ export default class DocumentUpload {
 
 	async uploadDocument() {
 		const formData = new FormData()
-		formData.append('file', this.uploadContent)
+		formData.append('file', fs.createReadStream(this.filePath))
 		formData.append('url', '')
-		formData.append('fileName', '背影.txt')
+		formData.append('fileName', '')
 		formData.append('fileType', 'wiki')
 		formData.append('needSummary', 'false')
 		formData.append('stepByStep', 'false')
-		formData.append('callbackUrl', 'your_callbackUrl')
+		formData.append('callbackUrl', '')
 
 		const headers = this.getHeader(formData)
-
 		try {
-			const response = await axios.post(
+			const response = await this.instant.post(
 				'https://chatdoc.xfyun.cn/openapi/v1/file/upload',
 				formData,
 				{ headers }
@@ -63,10 +63,11 @@ export default class DocumentUpload {
 	}
 }
 
-const curTime = Math.floor(Date.now() / 1000).toString()
+// 示例
+// const curTime = Math.floor(Date.now() / 1000).toString()
 
-const documentUpload = new DocumentUpload(APPId, APISecret, curTime)
+// const documentUpload = new DocumentUpload(APPId, APISecret, curTime)
 
-const fileId = (await documentUpload.uploadDocument()).data.fileId
+// const fileId = (await documentUpload.uploadDocument()).data.fileId
 
-console.log(`fileId:`, fileId)
+// console.log(`fileId:`, fileId)

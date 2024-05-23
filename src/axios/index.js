@@ -1,63 +1,76 @@
-import axios from 'axios'
+import WebSocket from 'ws'
+import qs from 'qs'
+import { APPId, APISecret, originUrl, bili_jct } from './config.js'
+import DocumentQAndA from './asked.js'
+import { bilibiliInfo } from './bilibili.js'
+import { replyMsg } from './bilibiliAPI.js'
 
-import CryptoJS from 'crypto-js'
+const { aid, root_id, source_id, fileId, source_content } = await bilibiliInfo()
 
-const appId = 'd0e47256'
-let apiKey = 'MTE2ODg2YTc1Zjg3NzI3NGNiY2M0MWE5'
-let apiSecret = 'e71a93f37ccb8a4b9517f907c06f5523'
+const param = {
+	APPId,
+	APISecret,
+	curTime: Math.floor(Date.now() / 1000).toString(),
+	originUrl,
+	fileId,
+	question: source_content,
+}
+const documentQAndA = new DocumentQAndA(param)
+const wsUrl = documentQAndA.getWebSocketUrl()
+const headers = documentQAndA.getHeader()
+const requestBody = await documentQAndA.getRequestBody()
+const answers = []
 
-const httpUrl = new URL('https://spark-api.xf-yun.com/v3.5/chat')
-const modelDomain = 'generalv3.5'
-const getUrl = () => {
-	let url = 'wss://' + httpUrl.host + httpUrl.pathname
-
-	// console.log('我打印的' + httpUrl.host)
-	// console.log("我打印的" + httpUrl.pathname)
-
-	let host = 'localhost:8080'
-	let date = new Date().toGMTString()
-	let algorithm = 'hmac-sha256'
-	let headers = 'host date request-line'
-	let signatureOrigin = `host: ${host}\ndate: ${date}\nGET ${httpUrl.pathname} HTTP/1.1`
-	let signatureSha = CryptoJS.HmacSHA256(signatureOrigin, apiSecret)
-	let signature = CryptoJS.enc.Base64.stringify(signatureSha)
-	let authorizationOrigin = `api_key="${apiKey}", algorithm="${algorithm}", headers="${headers}", signature="${signature}"`
-	let authorization = btoa(authorizationOrigin)
-	url = `${url}?authorization=${authorization}&date=${date}&host=${host}`
-	return url
+const messageBody = {
+	oid: aid,
+	type: '1',
+	message: '',
+	root: root_id !== 0 ? root_id : source_id,
+	parent: source_id,
+	jsonp: 'jsonp',
+	scene: 'msg',
+	plat: '1',
+	from: 'im-reply',
+	build: '0',
+	mobi_app: 'web',
+	csrf_token: bili_jct,
+	csrf: bili_jct,
 }
 
-export function getSpark() {
-	let params = {
-		header: {
-			app_id: appId,
-			uid: 'fd3f47e4-d',
-		},
-		parameter: {
-			chat: {
-				domain: modelDomain,
-				temperature: 0.5,
-				max_tokens: 1024,
-			},
-			context: context,
-		},
-		payload: {
-			message: {
-				text: [
-					{
-						role: 'user',
-						content: '中国第一个皇帝是谁？',
-					},
-					{
-						role: 'user',
-						content: '秦始皇修的长城吗',
-					},
-				],
-			},
-		},
-	}
-	const url = getUrl()
-	return axios.post(url, params)
-}
+setTimeout(() => {
+	const ws = new WebSocket(wsUrl, {
+		headers: headers,
+	})
 
-console.log(`getSpark:`, await getSpark())
+	ws.on('open', function open() {
+		ws.send(JSON.stringify(requestBody))
+	})
+
+	ws.on('message', async function incoming(data) {
+		const message = JSON.parse(data)
+		const code = message.code
+		if (code !== 0) {
+			console.log(`请求错误: ${code}, ${JSON.stringify(message)}`)
+			ws.close()
+		} else {
+			const content = message.content
+			const status = message.status
+			answers.push(content)
+			if (status === 2) {
+				const res = answers.join('')
+				messageBody.message = res
+				console.log(`res:`, res)
+				await replyMsg(qs.stringify(messageBody))
+				ws.close()
+			}
+		}
+	})
+
+	ws.on('error', function error(error) {
+		console.error('WebSocket error:', error)
+	})
+
+	ws.on('close', function close() {
+		console.log('WebSocket closed')
+	})
+}, 5000)
