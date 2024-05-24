@@ -1,27 +1,25 @@
-# Init
+# Introduction
+
+Base on [讯飞 Spark](https://www.xfyun.cn/doc/spark/ChatDoc-API.html)
+
+It can auto reply bilibili comment
+
+## Install
+
+```
+git clone git@github.com:Aganivi/spark-demo.git
+```
 
 ```
 npm install
 ```
 
-// Then, set apiId and apiSecret in src/axios/config.js
+## Config
 
-## Upload file and get fileId
+Set apiId, apiSecret and bilibili cookie in src/axios/config.js
 
-```
-// run upload.js
-
-node src/axios/upload.js
-
-// Then, copy fileId from TERMINAL
-```
-
-## Ask questions to Spark
-Set fileId and question in src/axios/asked.js
-
-Then
+## Run 
 
 ```
-node src/axios/asked.js
+node src/axios/index.js
 ```
-
